@@ -2,8 +2,15 @@ import { Worker, Job, DelayedError, UnrecoverableError } from 'bullmq';
 import { EmailStatus } from '@prisma/client';
 import { env } from '../config/environment-config';
 import { prisma } from '../db/prisma-client';
-import { createRedisConnection } from '../redis-connection';
-import { EMAIL_QUEUE_NAME, EmailJobData, enqueueEmail, getQueue, jobIdFor } from './email-queue';
+import { createRedisConnection, disconnectRedis } from '../redis-connection';
+import {
+  EMAIL_QUEUE_NAME,
+  EmailJobData,
+  closeQueue,
+  enqueueEmail,
+  getQueue,
+  jobIdFor,
+} from './email-queue';
 import { sendEmail } from '../services/email-delivery-service';
 import { indexEmail } from '../services/elasticsearch-service';
 import { notifyRateLimitHit } from '../services/rate-limit-notifier';
@@ -198,12 +205,31 @@ export async function stopWorker(): Promise<void> {
 
 if (require.main === module) {
   startWorker();
+  let shuttingDown = false;
   const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     console.log('[worker] shutting down...');
-    await stopWorker();
-    await prisma.$disconnect();
-    process.exit(0);
+    try {
+      await stopWorker();
+    } finally {
+      try {
+        await closeQueue();
+      } finally {
+        try {
+          await disconnectRedis();
+        } finally {
+          await prisma.$disconnect();
+        }
+      }
+    }
   };
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  const onSignal = () => {
+    void shutdown().catch((err) => {
+      console.error('[worker] shutdown failed:', err);
+      process.exitCode = 1;
+    });
+  };
+  process.on('SIGINT', onSignal);
+  process.on('SIGTERM', onSignal);
 }
