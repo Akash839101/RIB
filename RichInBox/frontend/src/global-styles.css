@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  min-height: 100vh;
+}
+
+body {
+  @apply bg-[#f7f6fb] text-slate-900 antialiased;
+  min-width: 320px;
+}
+
+::selection {
+  @apply bg-brand/20 text-brand-dark;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
