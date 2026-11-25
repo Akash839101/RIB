@@ -8,6 +8,8 @@
     "dev": "tsx watch src/server-entry.ts",
     "worker": "tsx watch src/queue/email-worker.ts",
     "build": "prisma generate && tsc -p tsconfig.json",
+    "vercel-build": "prisma generate && prisma migrate deploy && tsc -p tsconfig.json",
+    "postinstall": "prisma generate",
     "start": "node dist/server-entry.js",
     "start:worker": "node dist/queue/email-worker.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
