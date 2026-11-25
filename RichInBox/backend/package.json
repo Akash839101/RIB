@@ -12,6 +12,7 @@
     "postinstall": "prisma generate",
     "start": "node dist/server-entry.js",
     "start:worker": "node dist/queue/email-worker.js",
+    "start:worker:window": "node dist/queue/worker-runner.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
