@@ -49,7 +49,8 @@ reachinbox-a/
 | Google OAuth app | for "Continue with Google" login |
 | Slack app | for rate-limit notifications |
 
-> Docker is **not** required.
+> Docker is not required for local development; Vercel builds the production
+> worker image from `backend/Dockerfile.worker`.
 
 ---
 
@@ -91,6 +92,24 @@ npm run dev
 npm run dev      # API (also starts a worker)
 npm run worker   # extra dedicated worker process
 ```
+
+### Vercel production worker
+
+The backend's Vercel API function does not start a BullMQ worker. Production
+deployments use the Vercel Daemon declared in `backend/vercel.json`; it runs
+`npm run start:worker` from `backend/Dockerfile.worker` and consumes the same
+Redis queue as the API. This is a continuous worker, not a cron job. Configure
+the production `DATABASE_URL`, `REDIS_URL`, and `JWT_SECRET` in the Vercel
+project's Environment Variables. Sender SMTP credentials are read from the
+database. The Docker build excludes local `.env` files.
+
+Vercel Daemons are in public beta and run only in Production. On Hobby, the
+team-wide monthly quotas are 5 active CPU-hours and 420 GiB-hours of provisioned
+memory. This worker requests 1 GiB, so if it runs continuously it can use the
+memory quota in about 17.5 days (less if other daemons share the quota). On Pro,
+daemon CPU and memory are usage-billed. Check the Vercel plan and usage before
+deploying; the daemon does not guarantee uninterrupted, no-cost operation on
+Hobby.
 
 Endpoints of interest:
 
